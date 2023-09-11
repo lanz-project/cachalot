@@ -1,0 +1,5 @@
+error: cachalot doesn't support const functions
+ --> tests/ui/constness.rs:4:1
+  |
+4 | const fn source(
+  | ^^^^^

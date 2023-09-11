@@ -1,0 +1,30 @@
+[package]
+name = "cachalot"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cachalot_proc_macro = { path = "cachalot_proc_macro" }
+
+derive_more = "0.99"
+thiserror = "1"
+
+num = "0.4"
+bool_ext = "0.5"
+
+ahash = "0.8.3"
+
+accumulable = { git = "https://github.com/leonardoDemitry/accumulable.git" }
+
+async-trait = "0.1"
+futures = { version = "0.3" }
+async-stream = "0.3"
+tokio = { version = "1.32", features = ["full"] }
+
+bytemuck = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+trybuild = "1"
+rand = "0.8"

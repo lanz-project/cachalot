@@ -1,0 +1,19 @@
+[package]
+name = "cachalot_proc_macro"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1"
+quote = "1"
+syn = { version = "1", features = ["full"] }
+
+proc-macro-error = { version = "1" }
+darling = "0"
+
+byte-unit = "4"
