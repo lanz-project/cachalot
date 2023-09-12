@@ -1,4 +1,4 @@
-pub use cachalot_proc_macro::{cachalot, try_cachalot};
+pub use cachalot_proc_macro::cachalot;
 
 mod idx_range;
 pub use idx_range::IdxRange;

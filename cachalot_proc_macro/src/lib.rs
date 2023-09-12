@@ -72,16 +72,6 @@ impl StoreArgs {
 #[proc_macro_error]
 #[proc_macro_attribute]
 pub fn cachalot(args: TokenStream, input: TokenStream) -> TokenStream {
-    transform(false, args, input)
-}
-
-#[proc_macro_error]
-#[proc_macro_attribute]
-pub fn try_cachalot(args: TokenStream, input: TokenStream) -> TokenStream {
-    transform(true, args, input)
-}
-
-fn transform(is_try: bool, args: TokenStream, input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as ItemFn);
 
     let vis = input.vis.clone();
@@ -121,16 +111,6 @@ fn transform(is_try: bool, args: TokenStream, input: TokenStream) -> TokenStream
     }
 
     let store_args = StoreArgs::new(args);
-
-    let use_store = if is_try {
-        quote!(
-            use cachalot::TryStore;
-        )
-    } else {
-        quote!(
-            use cachalot::Store;
-        )
-    };
 
     let inner_source = {
         let mut args_types = inputs
@@ -184,7 +164,7 @@ fn transform(is_try: bool, args: TokenStream, input: TokenStream) -> TokenStream
 
         quote! {
             #vis #asyncness #unsafety fn #ident <#generic_params> (#inputs) #output #where_clause {
-                #use_store
+                use cachalot::{Store, TryStore};
 
                 #inner_source
 

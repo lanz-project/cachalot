@@ -40,12 +40,12 @@ async fn x2_store() {
 
     use tokio::fs::remove_dir_all;
 
-    use cachalot::try_cachalot;
+    use cachalot::cachalot;
 
     #[derive(Debug)]
     pub struct MyError {}
 
-    #[try_cachalot(root = ".tests_x2_store")]
+    #[cachalot(root = ".tests_x2_store")]
     async fn source2<'a, K>(
         _key: K,
         range: Range<u128>,

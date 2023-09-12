@@ -9,11 +9,11 @@ Caches the result of a function for a given range of indexes.
 use cachalot::{cachalot, try_cachalot};
 
 #[cachalot(root = ".my_store")]
-pub async fn my_fn(..keys, range: Range<u128>) -> impl Stream<Item = MyItem> {
+pub async fn source(..keys, range: Range<u128>) -> impl Stream<Item = MyItem> {
     // your code
 }
 
-#[try_cachalot(root = ".my_store")]
+#[cachalot(root = ".my_store")]
 pub async fn try_source(..keys, range: Range<u128>) -> impl Stream<Item = Result<MyItem, Err>> {
     // your code
 }
