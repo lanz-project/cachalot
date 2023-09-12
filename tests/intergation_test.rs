@@ -51,7 +51,7 @@ async fn x2_store() {
         range: Range<u128>,
     ) -> impl Stream<Item = Result<u128, MyError>> + 'a
     where
-        K: Send + Sync + Copy + Hash + 'a + 'static,
+        K: Send + Sync + Copy + Hash + 'a,
     {
         stream::iter(range).map(|i| Ok(i * 2))
     }
