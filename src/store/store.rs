@@ -3,8 +3,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use futures::future::Future;
-use futures::stream::{self, BoxStream, Stream, StreamExt, TryStreamExt};
+use futures::stream::{self, BoxStream, StreamExt, TryStreamExt};
 
 use tokio::fs::{create_dir_all, try_exists};
 
@@ -19,18 +18,16 @@ use crate::source::{Source, SourceRange};
 use super::{cache_pages, load_pages, pages_dir, store_pages_range, PagesDir, StoreError};
 
 #[async_trait]
-pub trait Store<'a, Range, K, V, S, Fut>: Source<Range, K, V, S, Fut>
+pub trait Store<'a, R, K, V>: Source<R, K, V>
 where
-    Range: SourceRange + Send + 'a,
+    R: SourceRange + Send + 'a,
     K: Send + Sync + Copy + Hash + 'a,
     V: NoUninit + AnyBitPattern + Send + Sync,
-    S: Stream<Item = V> + Send + 'a,
-    Fut: Future<Output = S> + Send,
 {
     async fn load<const PAGE_SIZE: Idx>(
         &'a self,
         k: K,
-        r: Range,
+        r: R,
         config: &TypedConfig<V, PAGE_SIZE>,
     ) -> BoxStream<'a, V>
     where
@@ -103,13 +100,17 @@ where
         .boxed()
     }
 
-    fn idx_range_source<const PAGE_SIZE: Idx>(&'a self, k: K, idx_range: IdxRange) -> Fut {
+    fn idx_range_source<const PAGE_SIZE: Idx>(&'a self, k: K, idx_range: IdxRange) -> Self::Fut {
         let range = idx_range.into();
 
         self(k, range)
     }
 
-    fn pages_source<const PAGE_SIZE: Idx>(&'a self, k: K, pages: PagesRange<PAGE_SIZE>) -> Fut {
+    fn pages_source<const PAGE_SIZE: Idx>(
+        &'a self,
+        k: K,
+        pages: PagesRange<PAGE_SIZE>,
+    ) -> Self::Fut {
         let idx_range: IdxRange = pages.into();
 
         self.idx_range_source::<PAGE_SIZE>(k, idx_range)
@@ -121,14 +122,12 @@ where
 }
 
 #[async_trait]
-impl<'a, F, Range, K, V, S, Fut> Store<'a, Range, K, V, S, Fut> for F
+impl<'a, F, R, K, V> Store<'a, R, K, V> for F
 where
-    F: Source<Range, K, V, S, Fut>,
-    Range: SourceRange + Send + 'a,
+    F: Source<R, K, V>,
+    R: SourceRange + Send + 'a,
     K: Send + Sync + Copy + Hash + 'a,
     V: NoUninit + AnyBitPattern + Send + Sync,
-    S: Stream<Item = V> + Send + Unpin + 'a,
-    Fut: Future<Output = S> + Send + 'a,
 {
 }
 

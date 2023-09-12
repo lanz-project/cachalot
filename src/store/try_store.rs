@@ -3,8 +3,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use futures::future::Future;
-use futures::stream::{self, BoxStream, Stream, StreamExt, TryStreamExt};
+use futures::stream::{self, BoxStream, StreamExt, TryStreamExt};
 
 use tokio::fs::{create_dir_all, try_exists};
 
@@ -19,21 +18,18 @@ use crate::source::{SourceRange, TrySource};
 use super::{load_pages, pages_dir, store_pages_range, try_cache_pages, PagesDir, StoreError};
 
 #[async_trait]
-pub trait TryStore<'a, Range, K, V, E, S, Fut>: TrySource<Range, K, V, E, S, Fut>
+pub trait TryStore<'a, R, K, V>: TrySource<R, K, V>
 where
-    Range: SourceRange + Send + 'a,
+    R: SourceRange + Send + 'a,
     K: Send + Sync + Copy + Hash + 'a,
     V: NoUninit + AnyBitPattern + Send + Sync,
-    E: Send + Sync + 'static,
-    S: Stream<Item = Result<V, E>> + Send + 'a,
-    Fut: Future<Output = S> + Send,
 {
     async fn load<const PAGE_SIZE: Idx>(
         &'a self,
         k: K,
-        r: Range,
+        r: R,
         config: &TypedConfig<V, PAGE_SIZE>,
-    ) -> BoxStream<'a, Result<V, E>>
+    ) -> BoxStream<'a, Result<V, Self::Error>>
     where
         'a: 'async_trait,
     {
@@ -85,13 +81,13 @@ where
         dir: PagesDir,
         k: K,
         pages: PagesRange<PAGE_SIZE>,
-    ) -> BoxStream<'a, Result<Vec<V>, StoreError<E>>> {
+    ) -> BoxStream<'a, Result<Vec<V>, StoreError<Self::Error>>> {
         async_stream::try_stream! {
-            for await result in store_pages_range::<E, PAGE_SIZE>(dir.as_ref(), pages).await {
+            for await result in store_pages_range::<Self::Error, PAGE_SIZE>(dir.as_ref(), pages).await {
                 let store_pages = result?;
 
                 let pages_data = if store_pages.cached {
-                    load_pages::<V, E, PAGE_SIZE>(Arc::clone(&dir), store_pages.pages).boxed()
+                    load_pages::<V, Self::Error, PAGE_SIZE>(Arc::clone(&dir), store_pages.pages).boxed()
                 } else {
                     let pages = store_pages.pages.clone();
                     let source = self.pages_source(k, store_pages.pages).await;
@@ -107,13 +103,17 @@ where
         .boxed()
     }
 
-    fn idx_range_source<const PAGE_SIZE: Idx>(&'a self, k: K, idx_range: IdxRange) -> Fut {
+    fn idx_range_source<const PAGE_SIZE: Idx>(&'a self, k: K, idx_range: IdxRange) -> Self::Fut {
         let range = idx_range.into();
 
         self(k, range)
     }
 
-    fn pages_source<const PAGE_SIZE: Idx>(&'a self, k: K, pages: PagesRange<PAGE_SIZE>) -> Fut {
+    fn pages_source<const PAGE_SIZE: Idx>(
+        &'a self,
+        k: K,
+        pages: PagesRange<PAGE_SIZE>,
+    ) -> Self::Fut {
         let idx_range: IdxRange = pages.into();
 
         self.idx_range_source::<PAGE_SIZE>(k, idx_range)
@@ -125,15 +125,12 @@ where
 }
 
 #[async_trait]
-impl<'a, F, Range, K, V, E, S, Fut> TryStore<'a, Range, K, V, E, S, Fut> for F
+impl<'a, F, R, K, V> TryStore<'a, R, K, V> for F
 where
-    F: TrySource<Range, K, V, E, S, Fut>,
-    Range: SourceRange + Send + 'a,
+    F: TrySource<R, K, V>,
+    R: SourceRange + Send + 'a,
     K: Send + Sync + Copy + Hash + 'a,
     V: NoUninit + AnyBitPattern + Send + Sync,
-    E: Send + Sync + 'static,
-    S: Stream<Item = Result<V, E>> + Send + 'a,
-    Fut: Future<Output = S> + Send,
 {
 }
 
